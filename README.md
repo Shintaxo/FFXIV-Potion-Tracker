@@ -1,6 +1,6 @@
 # Potion Tracker — lokale Party-Potion-Auswertung
 
-Stand: 2026-10-19. Separates Dalamud-Dev-Plugin. Es sendet **nichts an andere Spieler oder ins Netzwerk**, speichert keine Aufzeichnungen und wird durch diesen Projektstand nicht installiert oder veröffentlicht. Ergebnisse bleiben nur bis zum Entladen im Speicher.
+Stand: 2026-10-19. Separates Dalamud-Dev-Plugin. Es sendet **nichts an andere Spieler oder ins Netzwerk**, speichert keine Aufzeichnungen und wird durch diesen Quellcode nicht installiert oder als Dalamud-Plugin veröffentlicht. Ergebnisse bleiben nur bis zum Entladen im Speicher.
 
 ## Verhalten
 
@@ -20,7 +20,7 @@ Verwendete Dalamud-APIs: [IPartyList](https://dalamud.dev/api/Dalamud.Plugin.Ser
 
 In der aktuellen Linux-Umgebung ist ein Terminal verfügbar, aber kein `dotnet`-SDK installiert. **Dieser Projektstand ist hier nicht kompiliert oder ingame verifiziert.** Ein älterer Windows-Build der Diagnoseversion beweist diesen Build nicht.
 
-Für die lokale Dev-Prüfung `Plugin.cs` und `PotionTrackerDiagnostic.csproj` in ein Windows-Projektverzeichnis kopieren; `bin`/`obj` nicht übertragen. PowerShell dort:
+Für die lokale Dev-Prüfung das Repository unter Windows klonen (`git clone https://github.com/Shintaxo/FFXIV-Potion-Tracker.git`) oder einen bestehenden Klon mit `git pull` aktualisieren. PowerShell im Projektordner:
 
 ```powershell
 dotnet --list-sdks
@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) { throw "Build failed; see build.log" }
 Get-ChildItem .\bin -Recurse -Filter PotionTrackerDiagnostic.dll | Select-Object -ExpandProperty FullName
 ```
 
-Benötigt: .NET 10 SDK und Dalamud-Dev-Dateien (SDK 15). Falls der `Test-Path` false ergibt, den Dev-Pfad prüfen oder `DALAMUD_HOME` setzen. Den DLL-Pfad in `/xlsettings` → Experimental → Dev Plugin Locations eintragen; unter `/xlplugins` → Dev Tools → Installed Dev Plugins lokal aktivieren. Keine Veröffentlichung.
+Benötigt: .NET 10 SDK und Dalamud-Dev-Dateien (SDK 15). Falls der `Test-Path` false ergibt, den Dev-Pfad prüfen oder `DALAMUD_HOME` setzen. Den DLL-Pfad in `/xlsettings` → Experimental → Dev Plugin Locations eintragen; unter `/xlplugins` → Dev Tools → Installed Dev Plugins lokal aktivieren. Keine Veröffentlichung über ein Dalamud-Plugin-Repository.
 
 ## Offene Ingame-Prüfung
 
