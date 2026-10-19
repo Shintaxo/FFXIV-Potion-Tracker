@@ -287,7 +287,7 @@ public sealed class Plugin : IDalamudPlugin
         this.currentPull = null;
         this.lastCombatEnd = now;
         var count = pull.Rows.Values.Count(row => row.Events.Count > 0);
-        Chat.Print($"Potion Tracker: potion onsets detected for {count}/{pull.PartySize} players. Use /potions for details.");
+        Chat.Print($"Potion Tracker: Potions detected for {count}/{pull.PartySize} players. Use /potions for details.");
     }
 
     private void MarkGap(string key)
