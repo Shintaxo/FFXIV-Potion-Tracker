@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Party;
@@ -34,9 +35,12 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPartyList Party { get; private set; } = null!;
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;
     [PluginService] internal static ITextureProvider Textures { get; private set; } = null!;
+    [PluginService] internal static IDutyState DutyState { get; private set; } = null!;
 
     private readonly WindowSystem windows = new("PotionTracker");
     private readonly ResultsWindow window;
+    private readonly SettingsWindow settingsWindow;
+    private readonly PluginConfig config;
     private readonly Dictionary<string, MemberObservation> observations = new();
     private Pull? currentPull;
     private Pull? lastPull;
@@ -44,13 +48,17 @@ public sealed class Plugin : IDalamudPlugin
     private DateTimeOffset? lastCombatEnd;
     private bool? lastCombat;
     private uint? lastTerritory;
+    private uint? lastDutyId;
     private long? lastPartyId;
     private string? lastRoster;
 
     public Plugin()
     {
+        this.config = PluginInterface.GetPluginConfig() as PluginConfig ?? new PluginConfig();
         this.window = new ResultsWindow(this);
+        this.settingsWindow = new SettingsWindow(this);
         this.windows.AddWindow(this.window);
+        this.windows.AddWindow(this.settingsWindow);
         Commands.AddHandler(Command, new CommandInfo(this.OnCommand)
         {
             HelpMessage = "Show the latest local pull's party potion observations."
@@ -73,7 +81,46 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCommand(string command, string args) => this.window.IsOpen = true;
     private void OpenMainUi() => this.window.IsOpen = true;
-    private void OpenConfigUi() => this.window.IsOpen = true;
+    private void OpenConfigUi() => this.settingsWindow.IsOpen = true;
+
+    private void SetTrackingMode(TrackingMode mode)
+    {
+        if (this.config.Mode == mode)
+            return;
+        this.config.Mode = mode;
+        PluginInterface.SavePluginConfig(this.config);
+        // A mode change never reinterprets an in-progress combat or earlier prepots.
+        this.currentPull = null;
+        this.lastPull = null;
+        this.observations.Clear();
+        this.lastCombatEnd = null;
+        this.lastCombat = Conditions[ConditionFlag.InCombat];
+    }
+
+    private bool IsTrackingDuty()
+    {
+        if (this.config.Mode == TrackingMode.EveryCombat)
+            return true;
+
+        // The live duty ID distinguishes duties that share a territory. UI category
+        // separates older Savage/Extreme content even after HighEndDuty is cleared.
+        var dutyRef = DutyState.ContentFinderCondition;
+        if (!dutyRef.IsValid)
+            return false;
+        var duty = dutyRef.Value;
+        var category = duty.ContentUICategory.RowId;
+        return duty.ContentType.RowId switch
+        {
+            28 => true, // Ultimate Raids
+            5 => category is 12 or 13 or 17 or 35 or 41 or 49, // Savage Raids
+            4 => (category is 19 or 20 or 22 or 33 or 39 or 47) &&
+                 duty.RaidFinderParam.RowId != 4, // Extreme Trials, not Unreal
+            29 => duty.RowId == 761, // Delubrum Reginae (Savage)
+            30 => duty.RowId is 879 or 947 or 980, // Criterion Savage
+            38 => duty.RowId == 1114, // Forked Tower: Magic (Extreme)
+            _ => false
+        };
+    }
 
     private void OnUpdate(IFramework framework)
     {
@@ -88,16 +135,29 @@ public sealed class Plugin : IDalamudPlugin
             this.lastCombatEnd = null;
             this.lastSample = null;
             this.lastTerritory = null;
+            this.lastDutyId = null;
             this.lastPartyId = null;
             this.lastRoster = null;
             return;
         }
 
         var territory = ClientState.TerritoryType;
+        var dutyId = DutyState.ContentFinderCondition.RowId;
         var gap = this.lastSample is { } previous && now - previous > MaxSampleGap;
-        if (gap || (this.lastTerritory is { } previousTerritory && previousTerritory != territory))
+        var contextChanged = (this.lastTerritory is { } previousTerritory && previousTerritory != territory) ||
+                             (this.lastDutyId is { } previousDutyId && previousDutyId != dutyId);
+        if (contextChanged)
+        {
+            // Do not combine observations or an active pull across duty boundaries.
+            this.currentPull = null;
+            this.observations.Clear();
+            this.lastCombatEnd = null;
+            this.lastCombat = null;
+        }
+        else if (gap)
             this.InvalidateContinuity();
         this.lastTerritory = territory;
+        this.lastDutyId = dutyId;
         this.lastSample = now;
 
         var members = ReadMembers(player);
@@ -176,7 +236,7 @@ public sealed class Plugin : IDalamudPlugin
 
         // The local InCombat edge is a pull proxy, not proof of a boss engage or wipe.
         var combat = Conditions[ConditionFlag.InCombat];
-        if (this.lastCombat == false && combat)
+        if (this.lastCombat == false && combat && this.IsTrackingDuty())
             this.StartPull(now, members);
         else if (this.lastCombat == true && !combat)
             this.FinishPull(now);
@@ -402,6 +462,14 @@ public sealed class Plugin : IDalamudPlugin
 
         public override void Draw()
         {
+            if (ImGui.Button("Settings"))
+                this.plugin.settingsWindow.IsOpen = true;
+            ImGui.SameLine();
+            ImGui.TextUnformatted(this.plugin.config.Mode == TrackingMode.Whitelist
+                ? "Mode: Savage / Ultimate / Extreme only"
+                : "Mode: Every combat");
+            ImGui.Separator();
+
             var pull = this.plugin.currentPull ?? this.plugin.lastPull;
             if (pull is null)
             {
@@ -448,4 +516,38 @@ public sealed class Plugin : IDalamudPlugin
             ImGui.EndTable();
         }
     }
+
+    private sealed class SettingsWindow : Window
+    {
+        private readonly Plugin plugin;
+
+        public SettingsWindow(Plugin plugin) : base("Potion Tracker Settings")
+        {
+            this.plugin = plugin;
+            this.Size = new Vector2(470, 170);
+            this.SizeCondition = ImGuiCond.FirstUseEver;
+        }
+
+        public override void Draw()
+        {
+            ImGui.TextUnformatted("Track potion onsets in:");
+            if (ImGui.RadioButton("Savage + Ultimate + Extreme (default)",
+                    this.plugin.config.Mode == TrackingMode.Whitelist))
+                this.plugin.SetTrackingMode(TrackingMode.Whitelist);
+            if (ImGui.RadioButton("Every combat",
+                    this.plugin.config.Mode == TrackingMode.EveryCombat))
+                this.plugin.SetTrackingMode(TrackingMode.EveryCombat);
+            ImGui.Separator();
+            ImGui.TextWrapped("A change takes effect on the next local combat start. " +
+                              "Previous results are cleared; an ongoing pull is discarded without a summary.");
+        }
+    }
+}
+
+public enum TrackingMode { Whitelist, EveryCombat }
+
+public sealed class PluginConfig : IPluginConfiguration
+{
+    public int Version { get; set; } = 1;
+    public TrackingMode Mode { get; set; } = TrackingMode.Whitelist;
 }
