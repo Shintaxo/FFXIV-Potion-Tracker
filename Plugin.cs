@@ -200,8 +200,8 @@ public sealed class Plugin : IDalamudPlugin
             this.observations.TryGetValue(member.Key, out var observation);
             var row = new PullRow(member.Name, member.JobId, member.PartyOrder)
             {
-                // A negative result requires a clean absent baseline throughout the
-                // complete prepot window, then uninterrupted visibility until pull end.
+                // Retain observation coverage internally. A missing onset does not
+                // prove that no potion was actually used.
                 CompletePrepotCoverage = observation?.CleanAbsentSince is { } clean &&
                                          clean <= now - PrepotWindow
             };
@@ -230,7 +230,7 @@ public sealed class Plugin : IDalamudPlugin
         this.currentPull = null;
         this.lastCombatEnd = now;
         var count = pull.Rows.Values.Count(row => row.Events.Count > 0);
-        Chat.Print($"{count}/{pull.PartySize} players used potions. /potions for details");
+        Chat.Print($"Potion onsets detected for {count}/{pull.PartySize} players. /potions for details");
     }
 
     private void MarkGap(string key)
@@ -386,11 +386,10 @@ public sealed class Plugin : IDalamudPlugin
         public bool Gap { get; set; }
         public bool Completed { get; set; }
         public List<DateTimeOffset> Events { get; } = new();
-        public string Verdict => this.Events.Count > 0 ? "✓" :
-            this.Completed && this.CompletePrepotCoverage && !this.Gap ? "✗" : "?";
-        public string Amount => this.Events.Count == 0
-            ? this.Verdict == "✗" ? "0" : "?"
-            : this.Events.Count.ToString();
+        // Coverage remains internal; the UI reports only whether an onset was detected.
+        public bool CompleteNoOnsetCoverage => this.Completed && this.CompletePrepotCoverage && !this.Gap;
+        public string Verdict => this.Events.Count > 0 ? "✓" : "X";
+        public string Amount => this.Events.Count.ToString();
     }
 
     private sealed class ResultsWindow : Window
@@ -413,7 +412,7 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
             ImGui.TextUnformatted($"Pull: {pull.Start:HH:mm:ss} UTC  |  Party: {pull.PartySize}  |  {(pull.End is null ? "ongoing" : "ended")}");
-            ImGui.TextUnformatted("✓ observed  |  ✗ none  |  ? uncertain");
+            ImGui.TextUnformatted("✓ Potion-Beginn erkannt  |  X: kein Potion-Beginn erkannt");
             if (!ImGui.BeginTable("potions", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
                 return;
             ImGui.TableSetupColumn("Class/Job");
