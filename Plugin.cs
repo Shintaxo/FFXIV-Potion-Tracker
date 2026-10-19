@@ -390,8 +390,7 @@ public sealed class Plugin : IDalamudPlugin
             this.Completed && this.CompletePrepotCoverage && !this.Gap ? "✗" : "?";
         public string Amount => this.Events.Count == 0
             ? this.Verdict == "✗" ? "0" : "?"
-            : this.Gap || !this.CompletePrepotCoverage
-                ? $"{this.Events.Count}+" : this.Events.Count.ToString();
+            : this.Events.Count.ToString();
     }
 
     private sealed class ResultsWindow : Window
@@ -414,7 +413,7 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
             ImGui.TextUnformatted($"Pull: {pull.Start:HH:mm:ss} UTC  |  Party: {pull.PartySize}  |  {(pull.End is null ? "ongoing" : "ended")}");
-            ImGui.TextUnformatted("✓ observed  |  ✗ none  |  ? uncertain  |  + minimum");
+            ImGui.TextUnformatted("✓ observed  |  ✗ none  |  ? uncertain");
             if (!ImGui.BeginTable("potions", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
                 return;
             ImGui.TableSetupColumn("Class/Job");
