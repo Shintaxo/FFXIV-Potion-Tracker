@@ -58,6 +58,7 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update += this.OnUpdate;
         PluginInterface.UiBuilder.Draw += this.windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi += this.OpenConfigUi;
     }
 
     public void Dispose()
@@ -65,12 +66,14 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update -= this.OnUpdate;
         PluginInterface.UiBuilder.Draw -= this.windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= this.OpenMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi -= this.OpenConfigUi;
         Commands.RemoveHandler(Command);
         this.windows.RemoveAllWindows();
     }
 
     private void OnCommand(string command, string args) => this.window.IsOpen = true;
     private void OpenMainUi() => this.window.IsOpen = true;
+    private void OpenConfigUi() => this.window.IsOpen = true;
 
     private void OnUpdate(IFramework framework)
     {

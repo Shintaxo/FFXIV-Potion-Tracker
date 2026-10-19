@@ -13,7 +13,7 @@ https://raw.githubusercontent.com/Shintaxo/FFXIV-Potion-Tracker/main/pluginmaste
 1. In game, open `/xlsettings` → **Experimental** → **Custom Plugin Repositories**.
 2. Add the URL above, enable the repository entry, and save the settings.
 3. Open `/xlplugins`, find **Potion Tracker**, and install it.
-4. Use `/potions` to open the results window. After a locally detected combat end, a private chat message also points to that command.
+4. Use `/potions` or the plugin manager’s **Open Config** button to open the same results window. After a locally detected combat end, a private chat message also points to `/potions`.
 
 This is a **custom repository**, not a listing in the official Dalamud plugin repository. It targets Dalamud API 15 (.NET 10). If Dalamud's API level changes, a new compatible build is required.
 

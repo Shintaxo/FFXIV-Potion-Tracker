@@ -3,7 +3,7 @@
     "Author": "Shintaxo",
     "Name": "Potion Tracker",
     "InternalName": "PotionTracker",
-    "AssemblyVersion": "0.4.0.0",
+    "AssemblyVersion": "0.4.1.0",
     "Description": "Tracks observed Medicated status onsets for party members during local combat and shows a private pull summary with /potions. An undetected onset does not prove a potion was not used.",
     "Punchline": "Local party potion timing by pull.",
     "RepoUrl": "https://github.com/Shintaxo/FFXIV-Potion-Tracker",
@@ -12,8 +12,8 @@
     "Tags": ["utility", "combat"],
     "IsHide": false,
     "IsTestingExclusive": false,
-    "DownloadLinkInstall": "https://github.com/Shintaxo/FFXIV-Potion-Tracker/releases/download/v0.4.0/PotionTracker.zip",
-    "DownloadLinkUpdate": "https://github.com/Shintaxo/FFXIV-Potion-Tracker/releases/download/v0.4.0/PotionTracker.zip",
-    "LastUpdate": "1792368000"
+    "DownloadLinkInstall": "https://github.com/Shintaxo/FFXIV-Potion-Tracker/releases/download/v0.4.1/PotionTracker.zip",
+    "DownloadLinkUpdate": "https://github.com/Shintaxo/FFXIV-Potion-Tracker/releases/download/v0.4.1/PotionTracker.zip",
+    "LastUpdate": "1792445304"
   }
 ]
