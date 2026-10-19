@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.4.0.0</Version>
+    <Author>Shintaxo</Author>
+    <Name>Potion Tracker</Name>
+    <Punchline>Local party potion timing by pull.</Punchline>
+    <Description>Tracks observed Medicated status onsets for party members during local combat and shows a private pull summary with /potions. An undetected onset does not prove a potion was not used.</Description>
+    <Tags>utility;combat</Tags>
+    <RepoUrl>https://github.com/Shintaxo/FFXIV-Potion-Tracker</RepoUrl>
+  </PropertyGroup>
+</Project>

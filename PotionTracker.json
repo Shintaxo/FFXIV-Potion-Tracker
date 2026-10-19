@@ -1,0 +1,8 @@
+{
+  "Name": "Potion Tracker",
+  "Author": "Shintaxo",
+  "Punchline": "Local party potion timing by pull.",
+  "Description": "Tracks observed Medicated status onsets for party members during local combat and shows a private pull summary with /potions. An undetected onset does not prove a potion was not used.",
+  "RepoUrl": "https://github.com/Shintaxo/FFXIV-Potion-Tracker",
+  "Tags": ["utility", "combat"]
+}

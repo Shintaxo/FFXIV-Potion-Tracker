@@ -13,14 +13,13 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
-namespace PotionTrackerDiagnostic;
+namespace PotionTracker;
 
 // All observations are local, transient and based on the Medicated status, not item-use packets.
 public sealed class Plugin : IDalamudPlugin
 {
     private const uint Medicated = 49;
     private const string Command = "/potions";
-    private const string LegacyCommand = "/ptrdiag";
     private static readonly TimeSpan MaxSampleGap = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan PrepotWindow = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan PlausibilityCooldown = TimeSpan.FromMinutes(4.5);
@@ -36,7 +35,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;
     [PluginService] internal static ITextureProvider Textures { get; private set; } = null!;
 
-    private readonly WindowSystem windows = new("PotionTrackerDiagnostic");
+    private readonly WindowSystem windows = new("PotionTracker");
     private readonly ResultsWindow window;
     private readonly Dictionary<string, MemberObservation> observations = new();
     private Pull? currentPull;
@@ -56,10 +55,6 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "Show the latest local pull's party potion observations."
         });
-        Commands.AddHandler(LegacyCommand, new CommandInfo(this.OnCommand)
-        {
-            HelpMessage = "Alias for /potions."
-        });
         Framework.Update += this.OnUpdate;
         PluginInterface.UiBuilder.Draw += this.windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
@@ -71,7 +66,6 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.Draw -= this.windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= this.OpenMainUi;
         Commands.RemoveHandler(Command);
-        Commands.RemoveHandler(LegacyCommand);
         this.windows.RemoveAllWindows();
     }
 
@@ -230,7 +224,7 @@ public sealed class Plugin : IDalamudPlugin
         this.currentPull = null;
         this.lastCombatEnd = now;
         var count = pull.Rows.Values.Count(row => row.Events.Count > 0);
-        Chat.Print($"Potion onsets detected for {count}/{pull.PartySize} players. /potions for details");
+        Chat.Print($"Potion Tracker: potion onsets detected for {count}/{pull.PartySize} players. Use /potions for details.");
     }
 
     private void MarkGap(string key)
@@ -411,8 +405,8 @@ public sealed class Plugin : IDalamudPlugin
                 ImGui.TextUnformatted("No local pull observed yet.");
                 return;
             }
-            ImGui.TextUnformatted($"Pull: {pull.Start:HH:mm:ss} UTC  |  Party: {pull.PartySize}  |  {(pull.End is null ? "ongoing" : "ended")}");
-            ImGui.TextUnformatted("✓ Potion-Beginn erkannt  |  X: kein Potion-Beginn erkannt");
+            ImGui.TextUnformatted($"Local pull: {pull.Start:HH:mm:ss} UTC  |  Party: {pull.PartySize}  |  {(pull.End is null ? "Ongoing" : "Ended")}");
+            ImGui.TextUnformatted("✓ Onset detected  |  X No onset detected (not proof of no potion use)");
             if (!ImGui.BeginTable("potions", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
                 return;
             ImGui.TableSetupColumn("Class/Job");
